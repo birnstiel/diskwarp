@@ -2,7 +2,8 @@
 ! and this https://courses.cs.washington.edu/courses/csep557/10au/lectures/triangle_intersection.pdf
 ! locating the points in a skewed/projected grid that can have overlap.
 
-MODULE myfort
+
+MODULE fmodule
    IMPLICIT NONE
 
 
@@ -268,14 +269,74 @@ CONTAINS
 
    end SUBROUTINE
 
-END MODULE myfort
+! -------------------------------------------------------------------
 
-program main
-   USE myfort, ONLY: interpolate_grid
+   subroutine apply_matrix(p, warp, twist, inc, PA, pout)
+
+      DOUBLE PRECISION, INTENT(in) :: p(3), warp
+      DOUBLE PRECISION, INTENT(IN), optional :: twist, inc, PA
+      DOUBLE PRECISION, INTENT(OUT) :: pout(3)
+      ! the default values
+      DOUBLE PRECISION :: phi_t = 0d0, PA_ = 0d0, inc_ = 0d0
+      DOUBLE PRECISION :: x, y, z
+      if(present(twist)) phi_t=twist
+      if(present(inc)) inc_=inc
+      if(present(PA)) PA_=PA
+
+      x = p(1)
+      y = p(2)
+      z = p(3)
+
+      pout(1) = (y*sin(warp) + z*cos(warp))*sin(PA_)*sin(inc_) + (x*sin(phi_t) + y* &
+         cos(phi_t)*cos(warp) - z*sin(warp)*cos(phi_t))*sin(PA_)*cos( &
+         inc_) + (x*cos(phi_t) - y*sin(phi_t)*cos(warp) + z*sin(phi_t)* &
+         sin(warp))*cos(PA_)
+
+      pout(2) = (y*sin(warp) + z*cos(warp))*sin(inc_)*cos(PA_) + (x*sin(phi_t) + y* &
+         cos(phi_t)*cos(warp) - z*sin(warp)*cos(phi_t))*cos(PA_)*cos( &
+         inc_) - (x*cos(phi_t) - y*sin(phi_t)*cos(warp) + z*sin(phi_t)* &
+         sin(warp))*sin(PA_)
+
+      pout(3) = -(y*sin(warp) + z*cos(warp))*cos(inc_) + (x*sin(phi_t) + y*cos( &
+         phi_t)*cos(warp) - z*sin(warp)*cos(phi_t))*sin(inc_)
+
+end subroutine
+
+! -------------------------------------------------------------------
+
+subroutine apply_matrix2D(p, warp, twist, inc, PA, pout, nr, nphi)
+
+   INTEGER, INTENT(in) :: nr, nphi
+   DOUBLE PRECISION, INTENT(in) :: p(nr, nphi, 3), warp(nr)
+   DOUBLE PRECISION, INTENT(IN), optional :: twist(nr), inc, PA
+   DOUBLE PRECISION, INTENT(OUT) :: pout(nr, nphi, 3)
+   ! the default values
+   DOUBLE PRECISION :: phi_t(nr), PA_ = 0d0, inc_ = 0d0
+   integer :: ir, iphi
+
+   if(present(twist)) then 
+      phi_t=twist
+   else
+      phi_t=0d0
+   end if
+
+   if(present(inc)) inc_=inc
+   if(present(PA)) PA_=PA
+
+   do ir = 1, nr
+      do iphi = 1, nphi
+         call apply_matrix(p(ir, iphi, :), warp(ir), twist(ir), inc_, PA_, pout(ir, iphi, :))
+      end do
+   end do
+
+
+end subroutine
+
+subroutine test_module(xi, yi, zi, vi, img_x, img_y, img_z, img_v)
    IMPLICIT NONE
    INTEGER, parameter :: nix=30, niy=20
-   DOUBLE PRECISION :: xi(2, 2), yi(2, 2), zi(2, 2), vi(2, 2)
-   DOUBLE PRECISION :: img_x(nix, niy), img_y(nix, niy), img_z(nix, niy), img_v(nix, niy)
+   DOUBLE PRECISION, INTENT(OUT) :: xi(2, 2), yi(2, 2), zi(2, 2), vi(2, 2)
+   DOUBLE PRECISION, INTENT(OUT) :: img_x(nix, niy), img_y(nix, niy), img_z(nix, niy), img_v(nix, niy)
    INTEGER:: ix, iy
 
    xi(1, 1) = 1.0
@@ -307,20 +368,7 @@ program main
 
    call interpolate_grid(xi, yi, zi, vi, img_x, img_y, img_z, img_v, nix, niy, 2, 2)
 
-   OPEN(UNIT=9, file='x.dat')
-   WRITE(9, *) img_x
-   CLOSE(9)
+end subroutine 
 
-   OPEN(UNIT=9, file='y.dat')
-   WRITE(9, *) img_y
-   CLOSE(9)
 
-   OPEN(UNIT=9, file='z.dat')
-   WRITE(9, *) img_z
-   CLOSE(9)
-
-   OPEN(UNIT=9, file='v.dat')
-   WRITE(9, *) img_v
-   CLOSE(9)
-
-end program
+END MODULE fmodule
