@@ -1,11 +1,6 @@
-all: Makefile fort.f90
-	f2py -m fort -c fort.f90
+all: Makefile fortran.f90
+	f2py -m fmodule -c fortran.f90
 
-test: fort.f90
-	gfortran fort.f90 -o test
-
-run: test
-	./test
 
 clean:
-	-rm *.o *.mod *.cpython*.so test x.dat y.dat z.dat v.dat
+	-rm *.o *.mod *.cpython*.so 
