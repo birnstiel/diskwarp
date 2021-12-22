@@ -9,4 +9,4 @@ dependencies:
    - ipyvolume
    - voila
    - pip:
-     - "--editable=git+https://github.com/birnstiel/diskwarp.git#egg=diskwarp-master"
+     - "--editable=git+https://github.com/birnstiel/diskwarp.git#egg=diskwarp-main"
