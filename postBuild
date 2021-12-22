@@ -1,5 +1,2 @@
 #!/bin/bash
-
-git clone https://github.com/birnstiel/diskwarp.git diskwarpgit
-pip install -e diskwarpgit
-cd diskwarpgit/diskwarp && make
+cd diskwarp && make
