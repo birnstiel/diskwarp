@@ -1,12 +1,12 @@
 name: base
 channels:
 dependencies:
-   - setuptools
-   - numpy
-   - sympy
-   - matplotlib
-   - ipython
-   - ipyvolume
-   - voila
-- pip:
+  - setuptools
+  - numpy
+  - sympy
+  - matplotlib
+  - ipython
+  - ipyvolume
+  - voila
+  - pip:
     - git+https://github.com/birnstiel/diskwarp.git#egg=diskwarp[complete]
