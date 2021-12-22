@@ -14,5 +14,5 @@ dependencies:
    - gcc_linux-64
    - gfortran_linux-64
    - pip:
-     - -r requirements.txt
-     #- "--editable=git+https://github.com/birnstiel/diskwarp.git#egg=diskwarp"
+     #- -r requirements.txt
+     - "--editable=git+https://github.com/birnstiel/diskwarp.git#egg=diskwarp"
