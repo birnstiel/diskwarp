@@ -1,0 +1,12 @@
+name: base
+channels:
+dependencies:
+   - setuptools
+   - numpy
+   - sympy
+   - matplotlib
+   - ipython
+   - ipyvolume
+   - voila
+   - pip:
+     - "--editable=git+https://github.com/birnstiel/diskwarp.git#egg=diskwarp-master"
