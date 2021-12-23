@@ -8,6 +8,7 @@ dependencies:
    - matplotlib
    - ipyvolume
    - ipython
+   - ipywidgets
    - jupyter
    - voila
    - pip
