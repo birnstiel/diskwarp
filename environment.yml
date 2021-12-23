@@ -11,8 +11,8 @@ dependencies:
    - jupyter
    - voila
    - pip
+   - ipympl
    - gfortran
-   - gcc_linux-64
-   - gfortran_linux-64
    - pip:
      - "--editable=git+https://github.com/birnstiel/diskwarp.git#egg=diskwarp"
+     #- git+https://github.com/birnstiel/diskwarp.git
