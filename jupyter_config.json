@@ -1,0 +1,17 @@
+{
+    "VoilaConfiguration": {
+        "theme": "dark",
+        "template": "gridstack",
+        "enable_nbextensions": true,
+    },
+    "ServerApp": {
+        "jpserver_extensions": {
+            "voila.server_extension": true
+        }
+    },
+    "NotebookApp": {
+        "nbserver_extensions": {
+            "voila.server_extension": true
+        }
+    }
+}

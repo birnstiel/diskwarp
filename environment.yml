@@ -1,19 +1,19 @@
 name: base
 channels:
+  - conda-forge
 dependencies:
-   - python>=3.7
-   - setuptools
-   - numpy
-   - sympy
-   - matplotlib
-   - ipyvolume
-   - ipython
-   - ipywidgets
-   - jupyter
-   - voila
-   - pip
-   - ipympl
-   - gfortran
-   - pip:
-     - "--editable=git+https://github.com/birnstiel/diskwarp.git#egg=diskwarp"
-     #- git+https://github.com/birnstiel/diskwarp.git
+  - ipyvolume
+  - ipywidgets >=7.6.0,<8
+  - voila
+  - voila-material
+  - python>=3.7
+  - setuptools
+  - numpy
+  - sympy
+  - matplotlib
+  - ipympl
+  - pip
+  - gfortran
+  - pip:
+    - "--editable=git+https://github.com/birnstiel/diskwarp.git#egg=diskwarp"
+    #- git+https://github.com/birnstiel/diskwarp.git
