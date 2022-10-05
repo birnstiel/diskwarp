@@ -1,6 +1,9 @@
+import subprocess
+
 import numpy as np
 from matplotlib.colors import Normalize
 import matplotlib.pyplot as plt
+from tqdm.auto import tqdm
 
 
 def plot_mesh_2D(points, ax=None, **kwargs):
@@ -97,11 +100,28 @@ def get_surface(r_i, z0=0.0, psi=1.25, r_taper=80.0, q_taper=1.5, nphi=50):
         'phic': phic
     }
 
-# to follow (mostly) Richs definitions
 
+def logistic(a, r, r0, dr):
+    """Logistic function with steeper transition
 
-def logistic(x, a, dx, x0):
-    return a / (1.0 + np.exp(-(x0 - x) / dx))
+    Parameters
+    ----------
+    a : float
+        maximum warp angle in DEGREE
+    r : array
+        radial grid
+    r0 : float
+        transition radius
+    dr : float
+        transition width. after this width, we are within
+        1/(1+exp(10)) < 5e-5 of the final radius
+
+    Returns
+    -------
+    array
+        the inclination array in RADIAN for every radius in `r`
+    """
+    return np.radians(a / (1 + np.exp((r - r0) / (0.1 * dr))))
 
 
 def warp(r, i_in=45.0, r0=50.0, dr=10.0):
@@ -170,3 +190,151 @@ def surface(r, z0=0.0, psi=1.25, r_taper=80.0, q_taper=1.5):
         surface height for each radius in `r`
     """
     return np.clip(z0 * r**psi * np.exp(-(r / r_taper)**q_taper), a_min=0.0, a_max=None)
+
+
+def warp_transformation(x, y, z, theta, phi):
+    """applies a warp to the cartesian coordinates `x, y, z` by warping and twisting by theta and phi (in RADIAN)
+
+    Parameters
+    ----------
+    x : array
+        x-coordinates
+    y : array
+        y-coorindates
+    z : array
+        z-coorindates
+    theta : float | array
+        the inclination angle of the warp in (RADIAN)
+    phi : float | array
+        the twist angle of the warp (in RADIAN)
+
+    Returns
+    -------
+    x,y,z
+        tuple with the updated cartesian coordinates
+    """
+    xprime = x * np.cos(phi) - y * np.sin(phi) * np.cos(theta) + z * np.sin(phi) * np.sin(theta)
+    yprime = x * np.sin(phi) + y * np.cos(phi) * np.cos(theta) - z * np.sin(theta) * np.cos(phi)
+    zprime = y * np.sin(theta) + z * np.cos(theta)
+    return xprime, yprime, zprime
+
+
+def unwarp_transformation(x, y, z, theta, phi):
+    """undoes a warp to the cartesian coordinates `x, y, z` by un-warping and un-twisting
+    a warp/twist with angles theta and phi (in RADIAN)
+
+     Parameters
+     ----------
+     x : array
+         x-coordinates
+     y : array
+         y-coorindates
+     z : array
+         z-coorindates
+     theta : float | array
+         the inclination angle of the warp in (RADIAN)
+     phi : float | array
+         the twist angle of the warp (in RADIAN)
+
+     Returns
+     -------
+     x,y,z
+         tuple with the updated cartesian coordinates
+     """
+    xprime = x * np.cos(phi) + y * np.sin(phi)
+    yprime = -x * np.sin(phi) * np.cos(theta) + y * np.cos(phi) * np.cos(theta) + z * np.sin(theta)
+    zprime = x * np.sin(phi) * np.sin(theta) - y * np.sin(theta) * np.cos(phi) + z * np.cos(theta)
+    return xprime, yprime, zprime
+
+
+def vel_sph_to_car(theta, phi, vr, vtheta, vphi):
+    """given theta, phi, convert spherical velocities to cartesian,
+
+    Parameters
+    ----------
+    theta : array
+        theta grid
+    phi : array
+        phi grid
+    vr, vtheta, vphi : arrays
+        radial, theta, and phi components of the velocities
+
+    Returns
+    -------
+    vx, vy, vz
+        cartesian x-, y-, and z-components of the velocities
+    """
+    vx = vr * np.sin(theta) * np.cos(phi) + vtheta * np.cos(phi) * np.cos(theta) - vphi * np.sin(phi)
+    vy = vr * np.sin(phi) * np.sin(theta) + vtheta * np.sin(phi) * np.cos(theta) + vphi * np.cos(phi)
+    vz = vr * np.cos(theta) - vtheta * np.sin(theta)
+
+    return vx, vy, vz
+
+
+def vel_car_to_sph(theta, phi, vx, vy, vz):
+    """given theta, phi, convert cartesian velocities to spherical
+
+    Parameters
+    ----------
+    theta : array
+        theta grid
+    phi : array
+        phi grid
+    vx, vy, vz : arrays
+        cartesian x-, y-, and z-components of the velocities
+
+    Returns
+    -------
+    vr, vtheta, vphi
+        spherical r-, theta-, and phi-components of the velocities
+    """
+    vr = vx * np.sin(theta) * np.cos(phi) + vy * np.sin(theta) * np.sin(phi) + vz * np.cos(theta)
+    vt = vx * np.cos(theta) * np.cos(phi) + vy * np.cos(theta) * np.sin(phi) - vz * np.sin(theta)
+    vp = -vx * np.sin(phi) + vy * np.cos(phi)
+
+    return vr, vt, vp
+
+
+def call_radmc(cmd, verbose=False, total=None):
+    """
+    Run radmc3d command and show progress bar instead.
+
+    cmd : str
+        the command to run, e.g. 'radmc3d mctherm'
+
+    verbose : bool
+        if True, then all output except the photon packges are shown
+        if False, just the progress is shown.
+
+    total : None | int
+        total number of photon packages, if known
+    """
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, text=True)
+    output = []
+
+    if 'nphot' in cmd:
+        total = int(cmd.split('nphot')[1].split()[1])
+
+    with tqdm(total=total, unit='photons') as pbar:
+        for line in p.stdout:
+            if 'Photon nr' in line:
+                pbar.update(1000)
+            elif verbose:
+                print(line, end='')
+            output += [line]
+    rc = p.wait()
+    return rc, ''.join(output)
+
+
+def grid_refine_inner_edge(x_orig, nlev, nspan):
+    "subdivide the `nspan` cells in grid `x_orig` by `nlev` levels"
+    x = x_orig.copy()
+    rev = x[0] > x[1]
+    for ilev in range(nlev):
+        x_new = 0.5 * (x[1:nspan + 1] + x[:nspan])
+        x_ref = np.hstack((x, x_new))
+        x_ref.sort()
+        x = x_ref
+        if rev:
+            x = x[::-1]
+    return x
