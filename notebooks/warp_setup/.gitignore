@@ -1,0 +1,16 @@
+amr_grid.inp
+*.fits
+dust_density.inp
+dust_temperature.dat
+dustkappa_silicate.inp
+dustopac.inp
+gas_velocity.inp
+image.out
+lines.inp
+microturbulence.inp
+*.pdf
+numberdens_co.inp
+radmc3d.inp
+radmc3d.out
+stars.inp
+wavelength_micron.inp
