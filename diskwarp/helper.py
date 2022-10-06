@@ -101,15 +101,15 @@ def get_surface(r_i, z0=0.0, psi=1.25, r_taper=80.0, q_taper=1.5, nphi=50):
     }
 
 
-def logistic(a, r, r0, dr):
+def logistic(r, a, r0, dr):
     """Logistic function with steeper transition
 
     Parameters
     ----------
-    a : float
-        maximum warp angle in DEGREE
     r : array
         radial grid
+    a : float
+        maximum warp angle in DEGREE
     r0 : float
         transition radius
     dr : float
@@ -119,9 +119,9 @@ def logistic(a, r, r0, dr):
     Returns
     -------
     array
-        the inclination array in RADIAN for every radius in `r`
+        the inclination array in DEGREE for every radius in `r`
     """
-    return np.radians(a / (1 + np.exp((r - r0) / (0.1 * dr))))
+    return a / (1 + np.exp((r - r0) / (0.1 * dr)))
 
 
 def warp(r, i_in=45.0, r0=50.0, dr=10.0):
@@ -143,7 +143,7 @@ def warp(r, i_in=45.0, r0=50.0, dr=10.0):
     array
         inclination (radian) for each annulus in `r`
     """
-    return np.radians(logistic(r, i_in, dr, r0))
+    return np.radians(logistic(r, i_in, r0, dr))
 
 
 def twist(r, phi=0.0, r0=50.0, dr=20.0):
@@ -165,7 +165,7 @@ def twist(r, phi=0.0, r0=50.0, dr=20.0):
     [type]
         [description]
     """
-    return np.radians(logistic(r, phi, dr, r0))
+    return np.radians(logistic(r, phi, r0, dr))
 
 
 def surface(r, z0=0.0, psi=1.25, r_taper=80.0, q_taper=1.5):
