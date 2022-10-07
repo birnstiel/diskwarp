@@ -64,18 +64,18 @@ def plot_v_2D(points, v, ax=None, scale=0.05, cmap=plt.cm.RdBu_r, **kwargs):
     return f, ax
 
 
-def get_surface(r_i, z0=0.0, psi=1.25, r_taper=80.0, q_taper=1.5, nphi=50):
+def get_surface(r_i, r0=1.0, z0=0.0, psi=1.25, r_taper=80.0, q_taper=1.5, nphi=50):
 
     nr = len(r_i) - 1
 
     # define cylindrical radius, azimuthal angle, and height above mid plane
     ri = np.ones([nr + 1, nphi + 1]) * r_i[:, None]
     phii = np.ones([nr + 1, nphi + 1]) * np.linspace(0, 2 * np.pi, nphi + 1)
-    zi = surface(ri, z0=z0, psi=psi, r_taper=r_taper, q_taper=q_taper)
+    zi = surface(ri, r0=r0, z0=z0, psi=psi, r_taper=r_taper, q_taper=q_taper)
 
     # define centers as well
     rc = 0.5 * (ri[1:, 1:] + ri[:-1, 1:])
-    zc = surface(rc, z0=z0, psi=psi, r_taper=r_taper, q_taper=q_taper)
+    zc = surface(rc, r0=r0, z0=z0, psi=psi, r_taper=r_taper, q_taper=q_taper)
     phic = 0.5 * (phii[1:, 1:] + phii[1:, :-1])
 
     # convert to cartesian (x, y = edges, xc, yc = centers)
@@ -168,15 +168,17 @@ def twist(r, phi=0.0, r0=50.0, dr=20.0):
     return np.radians(logistic(r, phi, r0, dr))
 
 
-def surface(r, z0=0.0, psi=1.25, r_taper=80.0, q_taper=1.5):
+def surface(r, r0=1.0, z0=0.0, psi=1.25, r_taper=80.0, q_taper=1.5):
     """return a surface height `z(r)`.
 
     Parameters
     ----------
     r : array
         radial grid
+    r0 : float, optional
+        normalization radius, by default = 1.0
     z0 : float, optional
-        surfac height normalization at r=1, by default 0.0
+        surface height normalization at r=r0, by default 0.0
     psi : float, optional
         flaring exponent, by default 1.25
     r_taper : float, optional
@@ -189,7 +191,7 @@ def surface(r, z0=0.0, psi=1.25, r_taper=80.0, q_taper=1.5):
     array
         surface height for each radius in `r`
     """
-    return np.clip(z0 * r**psi * np.exp(-(r / r_taper)**q_taper), a_min=0.0, a_max=None)
+    return np.clip(z0 * (r / r0) ** psi * np.exp(-(r / r_taper)**q_taper), a_min=0.0, a_max=None)
 
 
 def warp_transformation(x, y, z, theta, phi):
