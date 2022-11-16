@@ -129,12 +129,14 @@ CONTAINS
    END FUNCTION
 
 ! -------------------------------------------------------------------
-! function to bary-center interpolate at the point Q on a triangle
+! subroutine to bary-center interpolate at the point Q on a triangle
 ! spanned by points (A, B, C) with their values (VA, VB, VC).
-   FUNCTION barycenter_interpolate(A, B, C, Q, VA, VB, VC)
+! nq quantities can be interpolated, so VA, VB, VC have shape (nq)
+   subroutine barycenter_interpolate(A, B, C, Q, VA, VB, VC, result, nq)
       IMPLICIT NONE
-      DOUBLE PRECISION, INTENT(IN) :: A(3), B(3), C(3), Q(3), VA, VB, VC
-      DOUBLE PRECISION :: barycenter_interpolate
+      INTEGER, INTENT(IN) :: nq
+      DOUBLE PRECISION, INTENT(IN) :: A(3), B(3), C(3), Q(3), VA(nq), VB(nq), VC(nq)
+      DOUBLE PRECISION, INTENT(OUT) :: result(nq)
       DOUBLE PRECISION :: alpha, beta, gamma, n(3)
       ! normal of the supporting plane
       n  = cross((B-A), (C-A))
@@ -144,23 +146,24 @@ CONTAINS
       beta =  DOT_PRODUCT(cross(A-C, Q-C), n) / DOT_PRODUCT(cross(B-A, C-A), n)
       gamma =  DOT_PRODUCT(cross(B-A, Q-A), n) / DOT_PRODUCT(cross(B-A, C-A), n)
 
-      barycenter_interpolate = alpha * VA + beta * VB + gamma * VC
-   END FUNCTION
+      result = alpha * VA + beta * VB + gamma * VC
+   END subroutine
 
 ! -------------------------------------------------------------------
 ! find the grid cells that are intersected and pick the front one
-   SUBROUTINE intersect_surface(xi, yi, zi, vi, pt, nx, ny, matches, n_match, n_max)
+   SUBROUTINE intersect_surface(xi, yi, zi, vi, pt, nx, ny, matches, n_match, n_max, nq)
       IMPLICIT NONE
-      INTEGER, INTENT(IN):: nx, ny, n_max
-      DOUBLE PRECISION, INTENT(in), dimension(nx, ny) :: xi, yi, zi, vi
+      INTEGER, INTENT(IN):: nx, ny, n_max, nq
+      DOUBLE PRECISION, INTENT(in), dimension(nx, ny) :: xi, yi, zi
+      DOUBLE PRECISION, INTENT(in), dimension(nx, ny, nq) :: vi
       DOUBLE PRECISION, INTENT(in), dimension(2) :: pt
 
-      DOUBLE PRECISION, INTENT(OUT), DIMENSION(n_max, 4) :: matches
+      DOUBLE PRECISION, INTENT(OUT), DIMENSION(n_max, 3+nq) :: matches
       INTEGER,  INTENT(OUT) :: n_match
-      DOUBLE PRECISION :: Q(3), V
+      DOUBLE PRECISION :: Q(3), V(nq)
 
       DOUBLE PRECISION, dimension(3) :: p1, p2, p3, p4
-      DOUBLE PRECISION :: v1, v2, v3, v4, p(3)
+      DOUBLE PRECISION :: v1(nq), v2(nq), v3(nq), v4(nq), p(3)
       INTEGER :: ix, iy
       
       LOGICAL :: match
@@ -188,28 +191,28 @@ CONTAINS
             p4(2) = yi(ix, iy + 1)
             p4(3) = zi(ix, iy + 1)
 
-            v1 = vi(ix, iy)
-            v2 = vi(ix + 1, iy)
-            v3 = vi(ix + 1, iy + 1)
-            v4 = vi(ix, iy + 1)
+            v1 = vi(ix, iy, :)
+            v2 = vi(ix + 1, iy, :)
+            v3 = vi(ix + 1, iy + 1, :)
+            v4 = vi(ix, iy + 1, :)
 
             match = .false.
             if (PointInTriangle((/pt(1),pt(2)/), (/p1(1),p1(2)/), (/p2(1),p2(2)/), (/p3(1),p3(2)/))) then
                match = .true.
                ! interpolate the point on the triangle and return its value and z-coordinate
                Q = intersect_triangle(p1, p2, p3, p)
-               V = barycenter_interpolate(p1, p2, p3, Q, v1, v2, v3)               
+               call barycenter_interpolate(p1, p2, p3, Q, v1, v2, v3, V, nq)
                
             else if (PointInTriangle((/pt(1),pt(2)/), (/p1(1),p1(2)/), (/p3(1),p3(2)/), (/p4(1),p4(2)/))) then
                match = .true.
                ! interpolate the point on the triangle and return its value and z-coordinate
                Q = intersect_triangle(p1, p3, p4, p)
-               V = barycenter_interpolate(p1, p3, p4, Q, v1, v3, v4)
+               call barycenter_interpolate(p1, p3, p4, Q, v1, v3, v4, V, nq)
             ENDIF
             if (match) then
                n_match = n_match + 1
                matches(n_match, 1:3) = Q
-               matches(n_match, 4) = V
+               matches(n_match, 4:3+nq) = V
             ENDIF
          end do
       end do
@@ -218,18 +221,19 @@ CONTAINS
 
 ! -------------------------------------------------------------------
 ! function to project the 3d data along zi:
-! xi, yi, zi, vi : 2D matrices of shape (nx, ny) giving the x, y, z positions and values at those positions
+! xi, yi, zi : 2D matrices of shape (nx, ny) giving the x, y, z positions and values at those positions
+! vi: 3D matrix of the quantities that should be interpolated, shape (nx, ny, nq) for nq quantities.
 ! img_x, img_y : 2D matrices of shape (nix, niy) giving the x, y, z positions of the pixels where the projections should be carried out
 ! returns:
 ! - img_z : 2D matrix of shape (nix, niy) giving the intersection z-value at img_x, img_y
-! - img_v : 2D matrix of shape (nix, niy) giving the intersection value at img_x, img_y
-   SUBROUTINE interpolate_grid(xi, yi, zi, vi, img_x, img_y, img_z, img_v, nix, niy, nx, ny)
+! - img_v : 2D matrix of shape (nix, niy, nq) giving the intersection value at img_x, img_y, for all nq quantities
+   SUBROUTINE interpolate_grid(xi, yi, zi, vi, img_x, img_y, img_z, img_v, nix, niy, nx, ny, nq)
       IMPLICIT NONE
-      INTEGER, INTENT(IN) :: nix, niy, nx, ny
-      DOUBLE PRECISION, INTENT(IN) :: img_x(nix, niy), img_y(nix, niy), xi(nx, ny), yi(nx, ny), zi(nx, ny), vi(nx, ny)
-      DOUBLE PRECISION, INTENT(OUT) :: img_z(nix, niy), img_v(nix, niy)
+      INTEGER, INTENT(IN) :: nix, niy, nx, ny, nq
+      DOUBLE PRECISION, INTENT(IN) :: img_x(nix, niy), img_y(nix, niy), xi(nx, ny), yi(nx, ny), zi(nx, ny), vi(nx, ny, nq)
+      DOUBLE PRECISION, INTENT(OUT) :: img_z(nix, niy), img_v(nix, niy, nq)
       INTEGER, PARAMETER :: n_max = 10
-      DOUBLE PRECISION :: matches(n_max, 4)
+      DOUBLE PRECISION :: matches(n_max, 3 + nq)
       INTEGER :: numbers(n_max)
       DOUBLE PRECISION :: x, y, z_vals(n_max)
       INTEGER :: ix, iy, loc(1), n_match, i
@@ -247,11 +251,11 @@ CONTAINS
             y = img_y(ix, iy)
 
             ! for each image pixel, we find the intersection
-            call intersect_surface(xi, yi, zi, vi, (/x, y/), nx, ny, matches, n_match, n_max)
+            call intersect_surface(xi, yi, zi, vi, (/x, y/), nx, ny, matches, n_match, n_max, nq)
 
             if (n_match .eq. 0) then
                img_z(ix, iy) = nan()
-               img_v(ix, iy) = nan()
+               img_v(ix, iy, :) = nan()
                continue
             endif
 
@@ -262,7 +266,7 @@ CONTAINS
 
             ! get the coordinates
             img_z(ix, iy) = matches(loc(1), 3)
-            img_v(ix, iy) = matches(loc(1), 4)
+            img_v(ix, iy, :) = matches(loc(1), 4:nq+3)
 
          end do
       end do
@@ -348,11 +352,12 @@ subroutine apply_matrix2D(p, warp, twist, inc, PA, azi, pout, nr, nphi)
 
 end subroutine
 
-subroutine test_module(xi, yi, zi, vi, img_x, img_y, img_z, img_v)
+subroutine test_module(xi, yi, zi, vi, img_x, img_y, img_z, img_v, nq)
    IMPLICIT NONE
    INTEGER, parameter :: nix=30, niy=20
-   DOUBLE PRECISION, INTENT(OUT) :: xi(2, 2), yi(2, 2), zi(2, 2), vi(2, 2)
-   DOUBLE PRECISION, INTENT(OUT) :: img_x(nix, niy), img_y(nix, niy), img_z(nix, niy), img_v(nix, niy)
+   INTEGER, INTENT(IN) :: nq
+   DOUBLE PRECISION, INTENT(OUT) :: xi(2, 2), yi(2, 2), zi(2, 2), vi(2, 2, nq)
+   DOUBLE PRECISION, INTENT(OUT) :: img_x(nix, niy), img_y(nix, niy), img_z(nix, niy), img_v(nix, niy, nq)
    INTEGER:: ix, iy
 
    xi(1, 1) = 1.0
@@ -370,10 +375,10 @@ subroutine test_module(xi, yi, zi, vi, img_x, img_y, img_z, img_v)
    zi(2, 2) = 2.0
    zi(1, 2) = 2.0
 
-   vi(1, 1) = 1.0
-   vi(2, 1) = 2.0
-   vi(2, 2) = 3.0
-   vi(1, 2) = 2.0
+   vi(1, 1, :) = 1.0
+   vi(2, 1, :) = 2.0
+   vi(2, 2, :) = 3.0
+   vi(1, 2, :) = 2.0
 
    do ix = 1, nix
       do iy = 1, niy
@@ -382,7 +387,7 @@ subroutine test_module(xi, yi, zi, vi, img_x, img_y, img_z, img_v)
       enddo
    enddo
 
-   call interpolate_grid(xi, yi, zi, vi, img_x, img_y, img_z, img_v, nix, niy, 2, 2)
+   call interpolate_grid(xi, yi, zi, vi, img_x, img_y, img_z, img_v, nix, niy, 2, 2, nq)
 
 end subroutine 
 
