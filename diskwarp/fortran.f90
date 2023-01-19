@@ -173,30 +173,46 @@ CONTAINS
       n_match = 0
 
       ! loop over all the square of the grid and look for intersections
-      do ix = 1, nx - 1
-         do iy = 1, ny - 1
+      do iy = 1, ny - 1
+         do ix = 1, nx - 1
             p1(1) = xi(ix, iy)
             p1(2) = yi(ix, iy)
-            p1(3) = zi(ix, iy)
-
+            
             p2(1) = xi(ix + 1, iy)
             p2(2) = yi(ix + 1, iy)
-            p2(3) = zi(ix + 1, iy)
-
+            
             p3(1) = xi(ix + 1, iy + 1)
             p3(2) = yi(ix + 1, iy + 1)
-            p3(3) = zi(ix + 1, iy + 1)
 
             p4(1) = xi(ix, iy + 1)
             p4(2) = yi(ix, iy + 1)
-            p4(3) = zi(ix, iy + 1)
 
+            match = .false.
+
+            ! if we are clearly left or right of the cell, skip to next
+            if      (pt(1) .gt. MAX(p1(1), p2(1), p3(1), p4(1))) then
+               cycle
+            else if (pt(1) .lt. MIN(p1(1), p2(1), p3(1), p4(1))) then
+               cycle
+            else if (pt(2) .lt. MIN(p1(2), p2(2), p3(2), p4(2))) then
+               cycle
+            else if (pt(2) .gt. MAX(p1(2), p2(2), p3(2), p4(2))) then
+               cycle
+            endif
+
+            ! with that test out of the way, we can get the other relevant quantities ...
+            p1(3) = zi(ix, iy)
+            p2(3) = zi(ix + 1, iy)
+            p3(3) = zi(ix + 1, iy + 1)
+            p4(3) = zi(ix, iy + 1)
+            
             v1 = vi(ix, iy, :)
             v2 = vi(ix + 1, iy, :)
             v3 = vi(ix + 1, iy + 1, :)
             v4 = vi(ix, iy + 1, :)
 
-            match = .false.
+            ! and check for intersections in detail
+
             if (PointInTriangle((/pt(1),pt(2)/), (/p1(1),p1(2)/), (/p2(1),p2(2)/), (/p3(1),p3(2)/))) then
                match = .true.
                ! interpolate the point on the triangle and return its value and z-coordinate
