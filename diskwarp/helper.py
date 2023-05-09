@@ -101,15 +101,17 @@ def get_surface(r_i, r0=1.0, z0=0.0, psi=1.25, r_taper=80.0, q_taper=1.5, nphi=5
     }
 
 
-def logistic(r, a, r0, dr):
+def logistic(r, a_in, a_out, r0, dr):
     """Logistic function with steeper transition
 
     Parameters
     ----------
     r : array
         radial grid
-    a : float
-        maximum warp angle in DEGREE
+    a_in : float
+        inner warp angle in DEGREE
+    a_out : float
+        outter warp angle in DEGREE
     r0 : float
         transition radius
     dr : float
@@ -121,10 +123,10 @@ def logistic(r, a, r0, dr):
     array
         the inclination array in DEGREE for every radius in `r`
     """
-    return a / (1 + np.exp((r - r0) / (0.1 * dr)))
+    return a_out - (a_out-a_in)/(1 + np.exp((r - r0)/(0.1*dr))) 
 
 
-def warp(r, i_in=45.0, r0=50.0, dr=10.0):
+def warp(r, i_in=45.0, i_out=0.0, r0=50.0, dr=10.0):
     """return the inclination (radian) for each radius in `r`.
 
     Parameters
@@ -132,7 +134,9 @@ def warp(r, i_in=45.0, r0=50.0, dr=10.0):
     r : array
         radial grid
     i_in : float, optional
-        maximum inner inclination in degree, by default 45.0
+        inner inclination in degree, by default 45.0
+    i_out : float, optional
+        outer inclination in degree, by default 45.0
     r0 : float, optional
         transition radius, by default 50.0
     dr : float, optional
@@ -143,18 +147,20 @@ def warp(r, i_in=45.0, r0=50.0, dr=10.0):
     array
         inclination (radian) for each annulus in `r`
     """
-    return np.radians(logistic(r, i_in, r0, dr))
+    return np.radians(logistic(r, i_in, i_out, r0, dr))
 
 
-def twist(r, phi=0.0, r0=50.0, dr=20.0):
-    """return the twist angle (in radian) for each radius in `r`.
+def twist(r, PA_in=0.0, PA_out=0.0, r0=50.0, dr=20.0):
+    """return the PA/twist angle (in radian) for each radius in `r`.
 
     Parameters
     ----------
     r : array
         radial grid
-    phi : float, optional
-        maximum twist of the inner disk, by default 0.0
+    PA_in : float, optional
+        PA of the inner disk, by default 0.0
+    PA_out : float, optional
+        PA of the inner disk, by default 0.0
     r0 : float, optional
         transition radius where the twist is applied, by default 50.0
     dr : float, optional
@@ -165,7 +171,7 @@ def twist(r, phi=0.0, r0=50.0, dr=20.0):
     [type]
         [description]
     """
-    return np.radians(logistic(r, phi, r0, dr))
+    return np.radians(logistic(r, PA_in, PA_out, r0, dr))
 
 
 def surface(r, r0=1.0, z0=0.0, psi=1.25, r_taper=80.0, q_taper=1.5):
@@ -215,9 +221,9 @@ def warp_transformation(x, y, z, theta, phi):
     x,y,z
         tuple with the updated cartesian coordinates
     """
-    xprime = x * np.cos(phi) - y * np.sin(phi) * np.cos(theta) + z * np.sin(phi) * np.sin(theta)
-    yprime = x * np.sin(phi) + y * np.cos(phi) * np.cos(theta) - z * np.sin(theta) * np.cos(phi)
-    zprime = y * np.sin(theta) + z * np.cos(theta)
+    xprime =  x*np.cos(phi) + y*np.sin(phi)*np.cos(theta) + z*np.sin(phi)*np.sin(theta)
+    yprime = -x*np.sin(phi) + y*np.cos(phi)*np.cos(theta) + z*np.sin(theta)*np.cos(phi)
+    zprime = -y*np.sin(theta) + z*np.cos(theta)
     return xprime, yprime, zprime
 
 
@@ -243,9 +249,9 @@ def unwarp_transformation(x, y, z, theta, phi):
      x,y,z
          tuple with the updated cartesian coordinates
      """
-    xprime = x * np.cos(phi) + y * np.sin(phi)
-    yprime = -x * np.sin(phi) * np.cos(theta) + y * np.cos(phi) * np.cos(theta) + z * np.sin(theta)
-    zprime = x * np.sin(phi) * np.sin(theta) - y * np.sin(theta) * np.cos(phi) + z * np.cos(theta)
+    xprime = x*np.cos(phi) - y*np.sin(phi)
+    yprime = x*np.sin(phi)*np.cos(theta) + y*np.cos(phi)*np.cos(theta) - z*np.sin(theta)
+    zprime = x*np.sin(phi)*np.sin(theta) + y*np.sin(theta)*np.cos(phi) + z*np.cos(theta)
     return xprime, yprime, zprime
 
 
