@@ -221,9 +221,9 @@ def warp_transformation(x, y, z, theta, phi):
     x,y,z
         tuple with the updated cartesian coordinates
     """
-    xprime =  x*np.cos(phi) + y*np.sin(phi)*np.cos(theta) + z*np.sin(phi)*np.sin(theta)
-    yprime = -x*np.sin(phi) + y*np.cos(phi)*np.cos(theta) + z*np.sin(theta)*np.cos(phi)
-    zprime = -y*np.sin(theta) + z*np.cos(theta)
+    xprime =  x*np.cos(phi) - y*np.sin(phi)*np.cos(theta) + z*np.sin(phi)*np.sin(theta)
+    yprime = x*np.sin(phi) + y*np.cos(phi)*np.cos(theta) - z*np.sin(theta)*np.cos(phi)
+    zprime = y*np.sin(theta) + z*np.cos(theta)
     return xprime, yprime, zprime
 
 
@@ -249,9 +249,9 @@ def unwarp_transformation(x, y, z, theta, phi):
      x,y,z
          tuple with the updated cartesian coordinates
      """
-    xprime = x*np.cos(phi) - y*np.sin(phi)
-    yprime = x*np.sin(phi)*np.cos(theta) + y*np.cos(phi)*np.cos(theta) - z*np.sin(theta)
-    zprime = x*np.sin(phi)*np.sin(theta) + y*np.sin(theta)*np.cos(phi) + z*np.cos(theta)
+    xprime = x*np.cos(phi) + y*np.sin(phi)
+    yprime = -x*np.sin(phi)*np.cos(theta) + y*np.cos(phi)*np.cos(theta) + z*np.sin(theta)
+    zprime = x*np.sin(phi)*np.sin(theta) - y*np.sin(theta)*np.cos(phi) + z*np.cos(theta)
     return xprime, yprime, zprime
 
 
