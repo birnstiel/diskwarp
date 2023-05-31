@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - ipyvolume
-  - ipywidgets >=7.6.0,<8
+  - ipywidgets
   - voila
   - voila-material
   - python>=3.7
