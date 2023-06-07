@@ -55,7 +55,8 @@ if __name__ == "__main__":
             ext_modules=[extensions],
             install_requires=[
                 'matplotlib',
-                'numpy'],
+                'numpy',
+                'tqdm'],
             python_requires='>=3.6',
             zip_safe=False,
         )

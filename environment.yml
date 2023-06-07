@@ -13,6 +13,7 @@ dependencies:
   - matplotlib
   - ipympl
   - pip
+  - tqdm
   - gfortran
   - pip:
     - "--editable=git+https://github.com/birnstiel/diskwarp.git#egg=diskwarp"
