@@ -1,6 +1,8 @@
-__version__ = '0.0.1'
-
+from importlib import metadata as _md
 from . import helper
-from ._fortran import fmodule
+from diskwarp._fortran import fmodule
+
+__version__ = _md.version('diskwarp')
+
 
 __all__ = ['helper', 'fmodule']
