@@ -1,0 +1,30 @@
+[build-system]
+build-backend = 'mesonpy'
+requires = ['meson-python', 'numpy']
+
+[project]
+name = 'diskwarp'
+version = '0.0.2'
+description = 'warping and twisting protoplanetary disk surfaces'
+readme = { file = 'README.md', content-type = 'text/markdown' }
+keywords = [
+  "numerical",
+  "simulation",
+  "science",
+  "physics",
+  "astrophysics",
+  "astronomy",
+]
+authors = [
+    { name = "Til Birnstiel", email = "til.birnstiel@lmu.de" },
+    { name = "Andres Zuleta", email = "azuleta@ice.csic.es" },
+]
+maintainers = [
+  { name = "Tilman Birnstiel", email = "til.birnstiel@lmu.de" },
+  { name = "Andres Zuleta", email = "azuleta@ice.csic.es" }
+]
+license = { file = 'LICENSE' }
+dependencies = ['numpy', 'matplotlib', 'sympy', 'matplotlib', 'tqdm']
+
+[project.urls]
+Repository = "https://github.com/birnstiel/diskwarp/"
